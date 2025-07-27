@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 AI-Powered ISS Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 30%, #16213e 70%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .ai-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: glow 2s ease-in-out infinite alternate;
+            z-index: 1000;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+            to { box-shadow: 0 0 20px rgba(78, 205, 196, 0.8); }
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(15px);
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            background: linear-gradient(45deg, #00d4ff, #ff9500, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .ai-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+        }
+        
+        .ai-pulse {
+            width: 8px;
+            height: 8px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .map-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .map-container {
+            height: 450px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ai-prediction-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            max-width: 300px;
+            z-index: 1000;
+        }
+        
+        .prediction-score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .prediction-text {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        
+        .card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .ai-card {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        
+        .ai-card h3 {
+            color: #ff6b6b;
+        }
+        
+        .coordinate {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 3px solid #00d4ff;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #00d4ff, #ff9500);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-ai {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        }
+        
+        .btn-ai:hover {
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+        }
+        
+        .visibility-meter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .meter-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcf7f);
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+        
+        .conditions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .condition-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+        
+        .condition-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .smart-recommendations {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .recommendation-item {
+            background: rgba(255,255,255,0.05);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid;
+            transition: transform 0.2s ease;
+        }
+        
+        .recommendation-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .rec-excellent { border-left-color: #6bcf7f; }
+        .rec-good { border-left-color: #ffd93d; }
+        .rec-poor { border-left-color: #ff6b6b; }
+        
+        .rec-score {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .rec-details {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #00d4ff;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        
+        .light-pollution-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .light-pollution-input input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            padding: 8px;
+            color: white;
+            width: 60px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .map-container {
+                height: 350px;
+            }
+            
+            .ai-prediction-overlay {
+                position: relative;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ai-badge">🤖 AI POWERED</div>
+    
+    <div class="header">
+        <h1>🛰️ AI-Powered ISS Tracker</h1>
+        <p class="subtitle">Machine Learning Enhanced Space Station Visibility Predictions</p>
+        <div class="ai-status">
+            <div class="ai-pulse"></div>
+            <span>AI Model Active - Analyzing Atmospheric Conditions</span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="map-section">
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="ai-prediction-overlay" id="prediction-overlay" style="display: none;">
+                    <div class="prediction-score" id="prediction-score">--</div>
+                    <div class="prediction-text" id="prediction-text">Analyzing conditions...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="card">
+                <h3>📍 ISS Current Location</h3>
+                <div id="coordinates">
+                    <div class="loading">🛰️ Connecting to ISS...</div>
+                </div>
+                <div id="timestamp"></div>
+            </div>
+            
+            <div class="card ai-card">
+                <h3>🤖 AI Visibility Prediction</h3>
+                <div class="light-pollution-input">
+                    <label>Light Pollution (1-10):</label>
+                    <input type="number" id="light-pollution" min="1" max="10" value="5">
+                    <small>(1=Rural, 10=City Center)</small>
+                </div>
+                <button class="btn btn-ai" onclick="getAIPrediction()">
+                    🔮 Get AI Prediction
+                </button>
+                <div id="ai-results" style="display: none;">
+                    <div class="visibility-meter">
+                        <span>Visibility:</span>
+                        <div class="meter-bar">
+                            <div class="meter-fill" id="visibility-fill" style="width: 0%"></div>
+                        </div>
+                        <span id="visibility-percentage">0%</span>
+                    </div>
+                    <div class="conditions-grid" id="conditions-grid"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>🎯 Quick Actions</h3>
+                <button class="btn" onclick="getUserLocation()">📍 Find My Location</button>
+                <button class="btn" onclick="centerOnISS()">🛰️ Center on ISS</button>
+                <button class="btn btn-ai" onclick="getSmartRecommendations()">🧠 Smart Recommendations</button>
+            </div>
+            
+            <div class="card" id="smart-rec-card" style="display: none;">
+                <h3>🧠 AI-Ranked Viewing Opportunities</h3>
+                <div class="smart-recommendations" id="smart-recommendations">
+                    <div class="loading">🤖 AI is analyzing optimal viewing times...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let issMarker;
+        let userMarker;
+        let userLat, userLon;
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([0, 0], 2);
+            
+            // Space-themed dark map
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+                maxZoom: 18
+            }).addTo(map);
+            
+            // Custom ISS icon with animation
+            const issIcon = L.divIcon({
+                html: '<div style="font-size: 24px; animation: spin 4s linear infinite;">🛰️</div>',
+                iconSize: [30, 30],
+                className: 'iss-icon'
+            });
+            
+            issMarker = L.marker([0, 0], {icon: issIcon}).addTo(map);
+            
+            // Add CSS for spinning animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Fetch ISS location
+        async function updateISSLocation() {
+            try {
+                const response = await fetch('/api/iss-location');
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('coordinates').innerHTML = 
+                        `<div class="error">❌ ${data.error}</div>`;
+                    return;
+                }
+                
+                // Update marker position with smooth transition
+                issMarker.setLatLng([data.latitude, data.longitude]);
+                
+                // Update info panel
+                document.getElementById('coordinates').innerHTML = `
+                    <div class="coordinate">
+                        <span><strong>Latitude:</strong></span>
+                        <span>${data.latitude.toFixed(4)}°</span>
+                    </div>
+                    <div class="coordinate">
+                        <span><strong>Longitude:</strong></span>
+                        <span>${data.longitude.toFixed(4)}°</span>
+                    </div>
+                    <div class="coordinate">
+                        <span><strong>Altitude:</strong></span>
+                        <span>~408 km</span>
+                    </div>
+                    <div class="coordinate">
+                        <span><strong>Speed:</strong></span>
+                        <span>27,600 km/h</span>
+                    </div>
+                `;
+                
+                document.getElementById('timestamp').innerHTML = 
+                    `<small style="opacity: 0.7;">📡 Last updated: ${data.datetime}</small>`;
+                
+            } catch (error) {
+                console.error('Error fetching ISS location:', error);
+                document.getElementById('coordinates').innerHTML = 
+                    '<div class="error">🚫 Failed to connect to ISS tracking system</div>';
+            }
+        }
+        
+        // Get user's location
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        userLat = position.coords.latitude;
+                        userLon = position.coords.longitude;
+                        
+                        // Add user marker
+                        if (userMarker) {
+                            map.removeLayer(userMarker);
+                        }
+                        
+                        const userIcon = L.divIcon({
+                            html: '📍',
+                            iconSize: [20, 20],
+                            className: 'user-icon'
+                        });
+                        
+                        userMarker = L.marker([userLat, userLon], {icon: userIcon})
+                            .addTo(map)
+                            .bindPopup('🏠 Your Location');
+                        
+                        // Fit map to show both user and ISS
+                        if (issMarker) {
+                            const group = new L.featureGroup([issMarker, userMarker]);
+                            map.fitBounds(group.getBounds().pad(0.1));
+                        }
+                        
+                        // Automatically get AI prediction
+                        setTimeout(getAIPrediction, 1000);
+                    },
+                    function(error) {
+                        alert('❌ Error getting your location: ' + error.message);
+                    }
+                );
+            } else {
+                alert('❌ Geolocation is not supported by this browser.');
+            }
+        }
+        
+        // AI Visibility Prediction
+        async function getAIPrediction() {
+            if (!userLat || !userLon) {
+                alert('📍 Please find your location first!');
+                return;
+            }
+            
+            const lightPollution = document.getElementById('light-pollution').value;
+            const resultsDiv = document.getElementById('ai-results');
+            const overlay = document.getElementById('prediction-overlay');
+            
+            // Show loading state
+            document.getElementById('prediction-score').textContent = '🔄';
+            document.getElementById('prediction-text').textContent = 'AI analyzing atmospheric conditions...';
+            overlay.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/ai-visibility-prediction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: userLat,
+                        lon: userLon,
+                        light_pollution: parseInt(lightPollution)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                const prediction = data.prediction;
+                const probability = Math.round(prediction.visibility_probability * 100);
+                
+                // Update overlay
+                document.getElementById('prediction-score').textContent = `${probability}%`;
+                document.getElementById('prediction-text').textContent = 
+                    prediction.visible ? '✨ Excellent viewing conditions!' : '☁️ Poor visibility expected';
+                
+                // Update main results
+                resultsDiv.style.display = 'block';
+                
+                const visibilityFill = document.getElementById('visibility-fill');
+                const visibilityPercentage = document.getElementById('visibility-percentage');
+                
+                // Animate the meter
+                setTimeout(() => {
+                    visibilityFill.style.width = `${probability}%`;
+                    visibilityPercentage.textContent = `${probability}%`;
+                }, 500);
+                
+                // Update conditions
+                const conditionsGrid = document.getElementById('conditions-grid');
+                const conditions = prediction.conditions;
+                
+                conditionsGrid.innerHTML = `
+                    <div class="condition-item">
+                        <div class="condition-value">${conditions.cloud_cover}%</div>
+                        <div>Cloud Cover</div>
+                    </div>
+                    <div class="condition-item">
+                        <div class="condition-value">${conditions.humidity}%</div>
+                        <div>Humidity</div>
+                    </div>
+                    <div class="condition-item">
+                        <div class="condition-value">${conditions.wind_speed} km/h</div>
+                        <div>Wind Speed</div>
+                    </div>
+                    <div class="condition-item">
+                        <div class="condition-value">${conditions.elevation_angle}°</div>
+                        <div>Elevation</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('AI Prediction error:', error);
+                document.getElementById('prediction-score').textContent = '❌';
+                document.getElementById('prediction-text').textContent = 'AI analysis failed';
+            }
+        }
+        
+        // Smart Recommendations
+        async function getSmartRecommendations() {
+            if (!userLat || !userLon) {
+                alert('📍 Please find your location first!');
+                return;
+            }
+            
+            const card = document.getElementById('smart-rec-card');
+            const recommendations = document.getElementById('smart-recommendations');
+            
+            card.style.display = 'block';
+            recommendations.innerHTML = '<div class="loading">🧠 AI is analyzing optimal viewing times...</div>';
+            
+            try {
+                const response = await fetch('/api/smart-notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        lat: userLat,
+                        lon: userLon
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                const recs = data.recommendations;
+                let html = '';
+                
+                recs.forEach((rec, index) => {
+                    const score = Math.round(rec.visibility_score * 100);
+                    const className = score > 70 ? 'rec-excellent' : score > 50 ? 'rec-good' : 'rec-poor';
+                    
+                    html += `
+                        <div class="recommendation-item ${className}">
+                            <div class="rec-score">
+                                ${index === 0 ? '🏆 ' : ''}${rec.ai_recommendation} (${score}%)
+                            </div>
+                            <div class="rec-details">
+                                <strong>${rec.datetime}</strong><br>
+                                Duration: ${rec.duration} seconds
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                recommendations.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Smart recommendations error:', error);
+                recommendations.innerHTML = '<div class="error">🚫 AI analysis failed</div>';
+            }
+        }
+        
+        // Center map on ISS
+        function centerOnISS() {
+            if (issMarker) {
+                map.setView(issMarker.getLatLng(), 4);
+            }
+        }
+        
+        // Initialize everything
+        window.onload = function() {
+            initMap();
+            updateISSLocation();
+            
+            // Update ISS location every 10 seconds
+            setInterval(updateISSLocation, 10000);
+        };
+    </script>
+</body>
+</html>
