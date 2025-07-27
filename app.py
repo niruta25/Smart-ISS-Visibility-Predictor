@@ -13,7 +13,7 @@ app = Flask(__name__)
 # APIs
 ISS_LOCATION_API = "http://api.open-notify.org/iss-now.json"
 ISS_PASS_API = "http://api.open-notify.org/iss-pass.json"
-WEATHER_API_KEY = "7089d31fc236b0e8fcc61da88bd76000"
+WEATHER_API_KEY = "<>" # Set your OpenWeather API key here
 WEATHER_API = "http://api.openweathermap.org/data/2.5/weather"
 
 class ISSVisibilityPredictor:
