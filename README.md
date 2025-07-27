@@ -14,7 +14,7 @@ Most ISS trackers tell you WHEN it passes overhead, but ours uses AI to predict 
 
 ## What This Project Offers
 
-### ** Intelligent Visibility Predictions**
+### **Intelligent Visibility Predictions**
 Unlike traditional ISS trackers that only show location and pass times, our AI analyzes:
 - **Real-time weather conditions** (cloud cover, humidity, wind)
 - **Light pollution levels** (customizable by location)
@@ -23,21 +23,21 @@ Unlike traditional ISS trackers that only show location and pass times, our AI a
 
 **Result**: Get a **0-100% visibility probability** for each ISS pass, so you know when it's actually worth going outside!
 
-### ** Real-Time Features**
+### **Real-Time Features**
 - **Live ISS Tracking**: See the space station moving across Earth in real-time
 - **Interactive World Map**: Dark-themed map with animated ISS marker
 - **Smart Notifications**: AI ranks upcoming passes by viewing quality
 - **Distance Calculations**: Know exactly how far the ISS is from you
 - **Weather Integration**: Current atmospheric conditions affect predictions
 
-### ** Beautiful User Experience**
+### **Beautiful User Experience**
 - **Space-themed Design**: Dark gradient backgrounds with glowing elements
 - **Responsive Interface**: Works perfectly on desktop and mobile
 - **Real-time Updates**: ISS position updates every 10 seconds
 - **Animated Visualizations**: Smooth transitions and engaging animations
 - **AI Status Indicators**: Live feedback on machine learning analysis
 
-### ** Technical Innovation**
+### **Technical Innovation**
 - **Machine Learning Model**: Random Forest classifier trained on atmospheric physics
 - **Multiple Data Sources**: NASA APIs + weather data + orbital mechanics
 - **Real-time Processing**: Instant predictions with sub-second response times
